@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+
+  <head>
+    <meta charset='utf-8'>
+    <meta http-equiv="X-UA-Compatible" content="chrome=1">
+    <meta name="description" content="Seqspark : ">
+
+    <link rel="stylesheet" type="text/css" media="screen" href="stylesheets/stylesheet.css">
+
+    <title>Seqspark</title>
+  </head>
+
+  <body>
+
+    <!-- HEADER -->
+    <div id="header_wrap" class="outer">
+        <header class="inner">
+          <a id="forkme_banner" href="https://github.com/statgenetics/seqspark">View on GitHub</a>
+
+          <h1 id="project_title">Seqspark</h1>
+          <h2 id="project_tagline"></h2>
+
+            <section id="downloads">
+              <a class="zip_download_link" href="https://github.com/statgenetics/seqspark/zipball/master">Download this project as a .zip file</a>
+              <a class="tar_download_link" href="https://github.com/statgenetics/seqspark/tarball/master">Download this project as a tar.gz file</a>
+            </section>
+        </header>
+    </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main_content_wrap" class="outer">
+      <section id="main_content" class="inner">
+        <h1>
+<a id="seqspark-manual" class="anchor" href="#seqspark-manual" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>SeqSpark Manual</h1>
+
+<p>Zhang Di &amp; Suzanne M. Leal</p>
+
+<p>[TOC]</p>
+
+<h2>
+<a id="introduction" class="anchor" href="#introduction" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Introduction</h2>
+
+<p>SeqSpark analyzes large-scale genotype data both in the sense of sample size and of number of variants, usually generated from Whole-Genome-Sequencing (WGS) or Exome-Sequencing (ES) project. In this manual, we will describe its functionalities in data quality control and association testing.</p>
+
+<h3>
+<a id="prerequisites" class="anchor" href="#prerequisites" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Prerequisites</h3>
+
+<p>Since SeqSpark is based on Apache Spark, so to use it in any non-trivial situation you need a running Spark cluster, either provided by your organization or built by yourself. If you want to build a Spark cluster yourself, please refer to <a href="https://hadoop.apache.org/">Hadoop</a> and <a href="http://spark.apache.org">Spark</a>. If you do not have proper hardware onsite, you may want to setup a cloud environment in AWS, for which we provide a template configuration. We also provide a local Spark configuration for you to play with. Please do not run anything except the demos in the local configuration.</p>
+
+<p>To build SeqSpark from source, you need <code>sbt</code> and <code>gfortran</code> installed.</p>
+
+<h3>
+<a id="getting-started" class="anchor" href="#getting-started" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Getting Started</h3>
+
+<p>In a HOCON format configuration file, you specify the paths of the input genotype file (VCF) and a PED-like phenotype file, and the pipeline with its parameters you want to run. HOCON is an abbreviation for Human-Optimized-Config-Object-Notation. As the name suggested, it is very intuitive to understand and easy to use. Please refer to Examples and Specification for more details. To minimize your typing, we embedded reasonable defaults for all the parameters also in a HOCON file which comes with SeqA. You only need to configure the different parts in your own file. With the configuration file and all the necessary input files ready, you can run your analysis like this: </p>
+
+<div class="highlight highlight-source-shell"><pre>cluster:<span class="pl-k">~</span> user$ seqspark SingleStudy seqa.conf [spark-options]</pre></div>
+
+<p>As with other Spark-based applications, you can specify useful Spark options like “num-executors” on command line. For more options in Spark, please refer to submitting-applications. In section Configuration, we will explain the options in the configuration file section by section. In section Examples, we will give several examples on how to use it in various scenarios.</p>
+
+<h2>
+<a id="installation" class="anchor" href="#installation" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Installation</h2>
+
+<h3>
+<a id="binary-version" class="anchor" href="#binary-version" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Binary version</h3>
+
+<p>SeqSpark is a Spark application written in Scala, so the binary is simply a jar file with a few assistant scripts. You can download the whole package from <a href="http://seqspark.dizhang.org/seqspark.tar">here</a>:</p>
+
+<div class="highlight highlight-source-shell"><pre>user@server <span class="pl-k">~</span>$ wget http://seqspark.dizhang.org/seqspark.tar</pre></div>
+
+<p>After you downloading the tar file, you can uncompress it:</p>
+
+<div class="highlight highlight-source-shell"><pre>user@server: <span class="pl-k">~</span>$ tar xf seqspark.tar</pre></div>
+
+<p>Move the folder to somewhere desirable:</p>
+
+<div class="highlight highlight-source-shell"><pre>user@server: <span class="pl-k">~</span>$ mv seqspark <span class="pl-k">~</span>/software/</pre></div>
+
+<p>Set the path to your environment:</p>
+
+<div class="highlight highlight-source-shell"><pre>user@server: <span class="pl-k">~</span>$ <span class="pl-c1">echo</span> <span class="pl-s"><span class="pl-pds">"</span>PATH=~/software/seqspark:<span class="pl-smi">$PATH</span><span class="pl-pds">"</span></span> <span class="pl-k">&gt;&gt;</span> <span class="pl-k">~</span>/.bashrc</pre></div>
+
+<p>The last two steps are optional, which can usually help you organize your packages and faciliate the use.</p>
+
+<p>This binary version only includes the program, you then need to download the databases:</p>
+
+<div class="highlight highlight-source-shell"><pre>user@server: <span class="pl-k">~</span>$ seqspark-db ref RefSeq,dbSNP</pre></div>
+
+<p>The RefSeq and dbSNP databases will be downloaded to the remote ref folder of your HDFS.</p>
+
+<h3>
+<a id="build-from-source" class="anchor" href="#build-from-source" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Build from source</h3>
+
+<p>To build seqspark from source, you need <code>sbt</code>, which is available <a href="http://www.scala-sbt.org/0.13/docs/Manual-Installation.html">here</a>. And because we used one fortran program to calculate the multi-variate normal distribution, you also need <code>gfortran</code>, which should come with <code>gcc</code> on most linux distros.</p>
+
+<p>Get the source code:</p>
+
+<div class="highlight highlight-source-shell"><pre>user@server: <span class="pl-k">~</span>$ git clone https://github.com/zhangdi-devel/seqspark.git</pre></div>
+
+<p>If you don't have git, just paste the URL to your web browser and go to the website to download the zip file.</p>
+
+<p>Compile the source and install:</p>
+
+<div class="highlight highlight-source-shell"><pre>user@server: seqspark$ ./install --prefix <span class="pl-k">~</span>/software/seqspark --db-dir ref </pre></div>
+
+<p>If you have never run <code>sbt</code> or compiled <code>seqspark</code> before, it may take some time to download the dependencies. This <code>install</code> script will not only compile the source code, but also download RefSeq and dbSNP database files. For other prebuilt databases, you need to use the script <code>seqspark-db</code>. The CADD database is quite large (65GB), so it may take some time to finish. For a full description of the scripts, please refer to section Scripts. </p>
+
+<h3>
+<a id="virtual-machine-demo" class="anchor" href="#virtual-machine-demo" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Virtual machine demo</h3>
+
+<p>We built a virtual machine demo for you to play with SeqSpark. Please download this Vagrant <a href="https://seqspark.dizhang.org/Vagrantfile">configuration file</a>. You need Vagrant and VirtualBox installed on your host OS. Please check the Vagrant download <a href="https://www.vagrantup.com/downloads.html">page</a> and the VirtualBox download <a href="https://www.virtualbox.org/wiki/Downloads">page</a> for your platform (Mac, Windows, or Linux). Once you have them installed, just type <code>vagrant up</code> in the same folder containing the configuration file. Then you can log into the virtual machine by typing <code>vagrant ssh</code>.</p>
+
+<p>In the virtual machine, you can run the demos of SeqSpark:</p>
+
+<div class="highlight highlight-source-shell"><pre>user@sepspark: <span class="pl-k">~</span>$ seqspark SingleStudy seqspark-demo.conf</pre></div>
+
+<h2>
+<a id="configuration" class="anchor" href="#configuration" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Configuration</h2>
+
+<p>The configuration file contains all the options of SeqSpark. </p>
+
+<h3>
+<a id="single-study" class="anchor" href="#single-study" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Single study</h3>
+
+<p>Under the root braces of the configuration file, you can set up general runtime options for a certain submission.</p>
+
+<div class="highlight highlight-source-json"><pre>project = seqspark
+localDir = ${<span class="pl-ii">PWD</span>}
+dbDir = seqspark_db
+pipeline = [ <span class="pl-ii">qualityControl</span>, <span class="pl-ii">association</span> ]</pre></div>
+
+<h3>
+<a id="meta-analysis" class="anchor" href="#meta-analysis" aria-hidden="true"><span aria-hidden="true" class="octicon octicon-link"></span></a>Meta analysis</h3>
+      </section>
+    </div>
+
+    <!-- FOOTER  -->
+    <div id="footer_wrap" class="outer">
+      <footer class="inner">
+        <p class="copyright">Seqspark maintained by <a href="https://github.com/statgenetics">statgenetics</a></p>
+        <p>Published with <a href="https://pages.github.com">GitHub Pages</a></p>
+      </footer>
+    </div>
+
+    
+
+  </body>
+</html>
